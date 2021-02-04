@@ -80,8 +80,8 @@ def drawcards(frame, dir, cardnum, df, scale, imagelist_o, imagelist, imagetklis
 
         imagetklist.append(ImageTk.PhotoImage(imagelist[i]))
 
-        imagelabellist.append(tk.Label(text=str(id), image=imagetklist[i]))
-        frame.window_create("end", window=imagelabellist[i])
+        imagelabellist.append(tk.Label(frame, text=str(id), image=imagetklist[i]))
+        frame.window_create(tk.END, window=imagelabellist[i])
 
     return True
 
@@ -147,7 +147,7 @@ def selectcard(event, frame, textfield, cardjson, scalew, imagelist_o, imagelist
 
 # ROOT window
 root = tk.Tk()
-root.title("Scryfall image grabber")
+root.title("Scryfall Image Grabber")
 root.geometry("1024x700")
 
 bgcolor="grey"
@@ -163,22 +163,6 @@ fr_botle.grid(row=1, column=0, sticky="ns")
 # BOTTOM RIGHT Frame
 fr_botri = tk.Frame(root, bd=1, relief=tk.SOLID, bg="white")
 fr_botri.grid(row=1, column=1, sticky="nesw")
-
-cv_botri = tk.Canvas(fr_botri)
-scrollbar_botri = ttk.Scrollbar(fr_botri, orient="vertical", command=cv_botri.yview)
-fr_botri_scr = ttk.Frame(cv_botri)
-fr_botri_scr.bind(
-    "<Configure>",
-    lambda e: cv_botri.configure(
-        scrollregion=cv_botri.bbox("all")
-    )
-)
-cv_botri.create_window((0, 0), window=fr_botri_scr, anchor="nw")
-cv_botri.configure(yscrollcommand=scrollbar_botri.set)
-
-cv_botri.pack(side="left", fill="both", expand=True)
-scrollbar_botri.pack(side="right", fill="y")
-fr_botri_scr.pack(fill="both", expand=True)
 
 # ROOT WEIGHTS
 root.grid_columnconfigure(0, weight=0)
@@ -210,11 +194,11 @@ fr_top.grid_columnconfigure(1, weight=1)
 tk.Label(fr_botle, text="Size:").grid(row=0, column=0, stick="sw", pady=1)
 imgscale = tk.Scale(fr_botle, from_=15, to=80, orient=tk.HORIZONTAL, showvalue=0, command=lambda x : redrawcards(
         float(x)/100, imagelist_o, imagelist, imagetklist, imagelabellist))
-imgscale.set(29)
+imgscale.set(36)
 imgscale.grid(row=0, column=1, stick="ew", padx=2, pady=1)
 
 # Text box
-decktext = tk.Text(fr_botle, bd=1, width=30, relief=tk.SOLID)
+decktext = tk.Text(fr_botle, bd=1, width=34, relief=tk.SOLID)
 decktext.grid(row=1, column=0, columnspan=2, stick="nesw")
 
 # Buttons
@@ -236,14 +220,11 @@ fr_botle.grid_columnconfigure(1, weight=1)
 ## BOTTOM RIGHT STUFF
 
 # Widget wrapper
-wr_botri = tk.Text(fr_botri_scr, wrap="char", borderwidth=0,highlightthickness=0,state="disabled", cursor="arrow")
-wr_botri.pack(fill="both", expand=True)
+wr_botri = tk.Text(fr_botri, wrap="char", borderwidth=0, highlightthickness=0, state="disabled", cursor="arrow")
+scrollbar_botri = ttk.Scrollbar(fr_botri, orient="vertical", command=wr_botri.yview)
+wr_botri.configure(yscrollcommand=scrollbar_botri.set)
 
-wr_botri.bind(
-    "<Configure>",
-    lambda e: cv_botri.configure(
-        scrollregion=cv_botri.bbox("all")
-    )
-)
+scrollbar_botri.pack(side="right", fill="y")
+wr_botri.pack(side="left", fill="both", expand=True)
 
 root.mainloop()
