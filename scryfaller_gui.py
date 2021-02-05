@@ -16,6 +16,7 @@ imagetklist = []
 imagelabellist = []
 
 def select_all(event):
+    """Selects the entire text in the clicked text field."""
     widget = event.widget
     widget.tag_add(tk.SEL, '1.0', 'end-1c')
     widget.mark_set(tk.INSERT, 'end-1c')
@@ -23,6 +24,7 @@ def select_all(event):
     return 'break'
 
 def copy_text(event, cut=False):
+    """Copies text from the selected text field to the system clipboard."""
     widget = event.widget
     if widget.selection_get():
         pyperclip.copy(widget.selection_get())
@@ -32,6 +34,7 @@ def copy_text(event, cut=False):
     return 'break'
 
 def paste_text(event):
+    """Pastes text from the system clipboard to the selected text field."""
     widget = event.widget
     if widget.index(tk.INSERT):
         pos = widget.index(tk.INSERT)
@@ -40,6 +43,7 @@ def paste_text(event):
     return 'break'
 
 def askdeckdir(txtvar):
+    """Initiates a folder selection dialogue and updates the str var 'txtvar'."""
     initdir = os.path.abspath('./')
     if os.path.exists(txtvar.get()):
         initdir = txtvar.get()
@@ -49,45 +53,18 @@ def askdeckdir(txtvar):
         txtvar.set(dir)
     return
 
-# read textfield as /n separated array
 def readtxt(textfield):
+    """Reads text field content as \n separated array"""
     return str(textfield.get(1.0, tk.END)).strip().split("\n")
 
-# write text into text field, where txt is an array separated by lines
 def writetxt(textfield, txt):
+    """Writes 'txt' into text field, where txt is an string array (w.o. \n)."""
     textfield.delete('1.0', tk.END)
     textfield.insert(tk.END, '\n'.join(txt))
     return textfield
 
-def nextcard(frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
-    scale = scalew.get()/100
-
-    deletecards(imagelist_o, imagelist, imagetklist, imagelabellist)
-    cardname = getfirstname(readtxt(textfield))
-    if cardname[1] == '':
-        return
-
-    if len(cardjson) > 0:
-        cardjson.pop()
-    cardjson.append(cardreq(cardname[1]))
-
-    df = 'card_faces' in cardjson[-1]['data'][0].keys()
-
-    # if only one card, download immediately
-    if cardjson[-1]['total_cards'] == 1:
-        dlselectcard(0, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist)
-    else:
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            tmppics(cardjson[-1], tmpdirname)
-            drawcards(frame, tmpdirname, cardjson[-1]['total_cards'], df, scale,
-                      imagelist_o, imagelist, imagetklist, imagelabellist)
-
-        for i in range(0, len(imagelabellist)):
-            imagelabellist[i].bind("<ButtonRelease-1>", lambda e : selectcard(
-                e, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist))
-        return
-
 def drawcards(frame, dir, cardnum, df, scale, imagelist_o, imagelist, imagetklist, imagelabellist):
+    """Draws card previews with a given scale and stores everything in the appropriate lists."""
     num = 2 * cardnum if df else cardnum
     for i in range(0, num):
         if dir[-1] == os.sep:
@@ -116,6 +93,7 @@ def drawcards(frame, dir, cardnum, df, scale, imagelist_o, imagelist, imagetklis
     return True
 
 def redrawcards(scale, imagelist_o, imagelist, imagetklist, imagelabellist):
+    """Redraws contents of the given lists with a given scale."""
     for i in range(0, len(imagelist_o)):
         imgw, imgh = imagelist_o[i].size
         imgw = int(imgw * scale)
@@ -130,6 +108,7 @@ def redrawcards(scale, imagelist_o, imagelist, imagetklist, imagelabellist):
     return True
 
 def deletecards(imagelist_o, imagelist, imagetklist, imagelabellist):
+    """Removes shown images in the lists and empties them."""
     while len(imagelist_o) > 0:
         imagelist_o.pop()
         imagelist.pop()
@@ -138,11 +117,43 @@ def deletecards(imagelist_o, imagelist, imagetklist, imagelabellist):
 
     return True
 
+def nextcard(frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
+    """Checks for the next card in the text field and initiates the card previews (if more than one card)."""
+    scale = scalew.get()/100
+
+    deletecards(imagelist_o, imagelist, imagetklist, imagelabellist)
+    cardname = getfirstname(readtxt(textfield))
+    if cardname[1] == '':
+        return
+
+    if len(cardjson) > 0:
+        cardjson.pop()
+    cardjson.append(cardreq(cardname[1]))
+
+    df = 'card_faces' in cardjson[-1]['data'][0].keys()
+
+    # if only one card, download immediately
+    if cardjson[-1]['total_cards'] == 1:
+        dlselectcard(0, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist)
+    else:
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmppics(cardjson[-1], tmpdirname)
+            drawcards(frame, tmpdirname, cardjson[-1]['total_cards'], df, scale,
+                      imagelist_o, imagelist, imagetklist, imagelabellist)
+
+        for i in range(0, len(imagelabellist)):
+            imagelabellist[i].bind("<ButtonRelease-1>", lambda e : selectcard(
+                e, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist))
+        return
+
 def selectcard(event, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
+    """Triggered when selecting a card image. Passes 'id' to the download function."""
     id = int(event.widget['text'])
     return dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist)
 
 def dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
+    """Downloads the selected card using a fire and forget thread and comments out the corresponding
+    entry in the text box."""
     datacard = cardjson[-1]['data'][id]
     df = 'card_faces' in datacard.keys()
     global deckdir
@@ -182,8 +193,6 @@ def dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist,
 root = tk.Tk()
 root.title("Scryfall Image Grabber")
 root.geometry("1024x700")
-
-bgcolor="grey"
 
 # TOP Frame
 fr_top = tk.Frame(root)

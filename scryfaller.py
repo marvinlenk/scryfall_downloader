@@ -6,6 +6,7 @@ import threading
 import os
 
 class picLoadThread(threading.Thread):
+    """Thread for downloading a picture."""
     def __init__(self, threadID, workarr, func):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -14,8 +15,8 @@ class picLoadThread(threading.Thread):
     def run(self):
         self.func(self.workarr)
 
-# Generate request url from card name
 def searchapi(card_name, unique='prints', game='paper', order='released'):
+    """Generate request url from card name (with additional infos)"""
     # First, look for additional infos in front
     cname, set, cnum = stripinfos(card_name)
 
@@ -50,6 +51,7 @@ def searchapi(card_name, unique='prints', game='paper', order='released'):
     return out
 
 def getjson(url):
+    """Files 'url' request to the server and returns json (in dict form)."""
     r = req.get(url)
     if r.status_code != 200:
         print("Error code " + str(r.status_code))
@@ -58,14 +60,16 @@ def getjson(url):
         print(r.json()['warnings'])
     return r.json()
 
-# Generates json from requested card name (with possible additional infos)
-# key 'total_cards' is the length of the data array of individual cards
-# key 'data' holds an array with length 'total_cards' of cards
-# every entry of the list ist another dictionary
-# Pic urls are listed in 'image_uris'
 def cardreq(card_name, unique='prints', game='paper', order='released'):
+    """Generates json (in dict form) from requested card name (with additional infos)"""
+
+    # key 'total_cards' is the length of the data array of individual cards
+    # key 'data' holds an array with length 'total_cards' of cards
+    # every entry of the list ist another dictionary
+    # Pic urls are listed in 'image_uris'
     r = getjson(searchapi(card_name, unique, game, order))
 
+    # If more than one page, append data until everything is fetched
     while r['has_more']:
         rt = getjson(r['next_page'])
 
@@ -79,8 +83,8 @@ def cardreq(card_name, unique='prints', game='paper', order='released'):
 
     return r
 
-# Downloads picture from url to path
 def loadpic(url, path):
+    """Download picture form url to path"""
     rpic = req.get(url, stream=True)
     if rpic.status_code != 200:
         print("Error code " + str(rpic.status_code))
@@ -93,16 +97,17 @@ def loadpic(url, path):
     
     return True
 
-# array structure is [[url, path], [url, path], ...]
 def loadpicarr(urlpatharr):
+    """Downloads all urls to corresponding paths given in an array."""
+    # array structure is [[url, path], [url, path], ...]
     for el in urlpatharr:
         loadpic(el[0], el[1])
 
     return True
 
-# use with with tempfile.TemporaryDirectory() as tmpdirname:
-# tp can be 'small', 'normal', 'large', 'png', 'art_crop', 'border_crop'
 def tmppics(apireq, dir, tp='normal'):
+    """Downloads card previews of the json 'apireq' to a folder 'dir' in multiple threads.
+    Picture types 'tp' can be 'small', 'normal', 'large', 'png', 'art_crop' and 'border_crop'"""
     data = apireq['data']
     df = 'card_faces' in data[0].keys()
     if dir[-1] == os.sep:
@@ -152,6 +157,7 @@ def tmppics(apireq, dir, tp='normal'):
     return True
 
 def getfirstname(text):
+    """Extract first valid card name from array of strings."""
     name = ''
     line = 0
     while name == '' and line < len(text):
@@ -163,6 +169,7 @@ def getfirstname(text):
     return line, name
 
 def stripall(text):
+    """Strips as many unnecessary infos from a card name as possible."""
     # dfc is not stripped here due to the bad implementation
     txt = stripnumber(text)
     txt = stripcommander(txt)
@@ -170,6 +177,7 @@ def stripall(text):
     return txt
 
 def stripnumber(text):
+    """Strips a leading number from a string (including the character after the number)."""
     txt = text.strip()
     i = 1
     check = False
@@ -186,6 +194,7 @@ def stripnumber(text):
     return ''
 
 def stripcommander(text):
+    """Strips the commander identification from a string."""
     txt = text.strip()
 
     # Deckstats format
@@ -199,11 +208,13 @@ def stripcommander(text):
     return txt
 
 def stripdfc(text):
+    """Returns only the first part of a double-faced card name."""
     txt = text.strip()
     txtar = txt.split('//')
     return txtar[0].strip()
 
 def stripfoil(text):
+    """Strips the foil identification from a string."""
     txt = text.strip()
 
     # Deckstats format
@@ -216,8 +227,9 @@ def stripfoil(text):
 
     return txt
 
-# Typical inputs can be '[PZNR] Turntimber Symbiosis' or '[AKH#247] Scattered Groves'
 def stripinfos(text):
+    """Extracts set and collector number info from a string and returns the stripped name,
+     the set and the collector number."""
     txt = text.strip()
     name = txt
     set = ''
@@ -225,6 +237,7 @@ def stripinfos(text):
     # check if additional infos are given
 
     # Deckstats format
+    # Typical inputs will be '[PZNR] Turntimber Symbiosis // ...' or '[AKH#247] Scattered Groves'
     if txt[0] == '[':
         cpos = txt.find(']')
         hpos = txt.find('#')
@@ -244,6 +257,7 @@ def stripinfos(text):
         name = txt[cpos+1:].strip()
 
     # Archidekt format
+    # Typical input will be 'Scattered Grove (akh)'
     if txt[-1] == ')':
         ipos = len(txt) - txt[::-1].find('(')
         set = txt[ipos:-1]
@@ -252,4 +266,5 @@ def stripinfos(text):
     return name, set, cnum
 
 def lineskipcheck(text):
+    """Checks if the given text is a comment or to short and should be skipped."""
     return text[0] == '#' or text[0:2] == '//' or len(text) < 3
