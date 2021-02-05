@@ -16,11 +16,24 @@ class picLoadThread(threading.Thread):
 
 # Generate request url from card name
 def searchapi(card_name, unique='prints', game='paper', order='released'):
+    # First, look for additional infos in front
+    cname, set, cnum = stripinfos(card_name)
+
     # Paper printing flag
     game_str = ''
     if game != False:
         game_str = '+game=' + game
-    
+
+    # Set flag
+    set_str = ''
+    if set != '':
+        set_str = '+set=' + set
+
+    # Collector number flag
+    cnum_str = ''
+    if cnum != -1:
+        cnum_str = '+cn=' + str(cnum)
+
     # Uniqueness flag
     unique_str = ''
     if unique != False:
@@ -29,11 +42,11 @@ def searchapi(card_name, unique='prints', game='paper', order='released'):
     # Order flag
     order_str = ''
     if order != False:
-        order_str = '&order=' + order 
-   
+        order_str = '&order=' + order
+
     out = 'https://api.scryfall.com/cards/search?q=!"'
-    out += urllib.parse.quote(str(card_name)) + '"'
-    out += game_str + order_str + unique_str
+    out += urllib.parse.quote(str(cname)) + '"'
+    out += game_str + set_str + cnum_str + order_str + unique_str
     return out
 
 def getjson(url):
@@ -45,9 +58,9 @@ def getjson(url):
         print(r.json()['warnings'])
     return r.json()
 
-# Generates json from requested card name
+# Generates json from requested card name (with possible additional infos)
 # key 'total_cards' is the length of the data array of individual cards
-# key 'data' holds an array with lengt 'total_cards' of cards
+# key 'data' holds an array with length 'total_cards' of cards
 # every entry of the list ist another dictionary
 # Pic urls are listed in 'image_uris'
 def cardreq(card_name, unique='prints', game='paper', order='released'):
@@ -146,8 +159,15 @@ def getfirstname(text):
         if lineskipcheck(txt):
             line += 1
             continue
-        name = stripnumber(stripcommander(stripdfc(txt)))
+        name = stripall(txt)
     return line, name
+
+def stripall(text):
+    # dfc is not stripped here due to the bad implementation
+    txt = stripnumber(text)
+    txt = stripcommander(txt)
+    txt = stripfoil(txt)
+    return txt
 
 def stripnumber(text):
     txt = text.strip()
@@ -167,15 +187,69 @@ def stripnumber(text):
 
 def stripcommander(text):
     txt = text.strip()
-    if len(txt) > 12:
-        if txt[-11] == '#!Commander':
-            return txt[:-11].strip()
+
+    # Deckstats format
+    if txt.find('#!Commander') != -1:
+        txt = txt[:txt.find('#!Commander')].strip()
+
+    # Archidekt format
+    if txt.find('[Commander') != -1:
+        txt = txt[:txt.find('[Commander')].strip()
+
     return txt
 
 def stripdfc(text):
     txt = text.strip()
     txtar = txt.split('//')
     return txtar[0].strip()
+
+def stripfoil(text):
+    txt = text.strip()
+
+    # Deckstats format
+    if txt.find('#!Foil') != -1:
+        txt = txt[:txt.find('#!Foil')].strip()
+
+    # Archidekt format
+    if txt.find('*F*') != -1:
+        txt = txt[:txt.find('*F*')].strip()
+
+    return txt
+
+# Typical inputs can be '[PZNR] Turntimber Symbiosis' or '[AKH#247] Scattered Groves'
+def stripinfos(text):
+    txt = text.strip()
+    name = txt
+    set = ''
+    cnum = -1
+    # check if additional infos are given
+
+    # Deckstats format
+    if txt[0] == '[':
+        cpos = txt.find(']')
+        hpos = txt.find('#')
+        # if hashtag is provided, collector num is set
+        if hpos != -1:
+            i = hpos + 1
+            while txt[hpos+1:i+1].isnumeric():
+                i += 1
+            cnum = int(txt[hpos+1:i])
+        else:
+            hpos = cpos
+        # check if set is actually set or rather collector number
+        if txt[1:hpos].isnumeric() and cnum == -1:
+            cnum = int(txt[1:hpos])
+        else:
+            set = txt[1:hpos]
+        name = txt[cpos+1:].strip()
+
+    # Archidekt format
+    if txt[-1] == ')':
+        ipos = len(txt) - txt[::-1].find('(')
+        set = txt[ipos:-1]
+        name = txt[:ipos-1].strip()
+    name = stripdfc(name)
+    return name, set, cnum
 
 def lineskipcheck(text):
     return text[0] == '#' or text[0:2] == '//' or len(text) < 3
