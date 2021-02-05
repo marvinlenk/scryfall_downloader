@@ -2,8 +2,11 @@ from scryfaller import *
 import tkinter as tk
 from PIL import ImageTk, Image
 from tkinter import filedialog, ttk
+import pyperclip
 import tempfile
-import os
+import os, platform
+
+ctrlkey = 'Command' if platform.system() == 'Darwin' else 'Control'
 
 # Some global variables
 cardjson = []
@@ -11,6 +14,30 @@ imagelist_o = []
 imagelist = []
 imagetklist = []
 imagelabellist = []
+
+def select_all(event):
+    widget = event.widget
+    widget.tag_add(tk.SEL, '1.0', 'end-1c')
+    widget.mark_set(tk.INSERT, 'end-1c')
+    widget.see(tk.INSERT)
+    return 'break'
+
+def copy_text(event, cut=False):
+    widget = event.widget
+    if widget.selection_get():
+        pyperclip.copy(widget.selection_get())
+        if cut:
+            widget.delete('sel.first', 'sel.last')
+
+    return 'break'
+
+def paste_text(event):
+    widget = event.widget
+    if widget.index(tk.INSERT):
+        pos = widget.index(tk.INSERT)
+        widget.insert(pos, pyperclip.paste())
+
+    return 'break'
 
 def askdeckdir(txtvar):
     initdir = os.path.abspath('./')
@@ -187,6 +214,13 @@ deckdir.set(os.path.abspath('./'))
 
 deckdir_entry = tk.Entry(fr_top, textvariable=deckdir)
 deckdir_entry.grid(row=0, column=1, sticky="ew", padx=1)
+deckdir_entry.bind('<'+ctrlkey+'-a>', lambda e : e.widget.select_range(0,tk.END))
+deckdir_entry.bind('<'+ctrlkey+'-A>', lambda e : e.widget.select_range(0,tk.END))
+deckdir_entry.bind('<'+ctrlkey+'-c>', lambda e : pyperclip.copy(deckdir.get()))
+deckdir_entry.bind('<'+ctrlkey+'-C>', lambda e : pyperclip.copy(deckdir.get()))
+deckdir_entry.bind('<'+ctrlkey+'-v>', lambda e : deckdir.set(pyperclip.paste()))
+deckdir_entry.bind('<'+ctrlkey+'-V>', lambda e : deckdir.set(pyperclip.paste()))
+deckdir_entry.unbind('<Button-3>')
 
 openbutton = tk.Button(fr_top, text='Open', command=lambda : askdeckdir(deckdir))
 openbutton.grid(row=0, column=2, padx=1)
@@ -206,6 +240,15 @@ imgscale.grid(row=0, column=1, stick="ew", padx=2, pady=1)
 # Text box
 decktext = tk.Text(fr_botle, bd=1, width=34, relief=tk.SOLID)
 decktext.grid(row=1, column=0, columnspan=2, stick="nesw")
+decktext.bind('<'+ctrlkey+'-a>', select_all)
+decktext.bind('<'+ctrlkey+'-A>', select_all)
+decktext.bind('<'+ctrlkey+'-c>', copy_text)
+decktext.bind('<'+ctrlkey+'-C>', copy_text)
+decktext.bind('<'+ctrlkey+'-v>', paste_text)
+decktext.bind('<'+ctrlkey+'-V>', paste_text)
+decktext.bind('<'+ctrlkey+'-x>', lambda e : copy_text(e, True))
+decktext.bind('<'+ctrlkey+'-X>', lambda e : copy_text(e, True))
+decktext.unbind('<Button-3>')
 
 # Buttons
 fr_botle_but = tk.Frame(fr_botle)
