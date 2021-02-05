@@ -196,7 +196,7 @@ root.geometry("1024x700")
 
 # TOP Frame
 fr_top = tk.Frame(root)
-fr_top.grid(row=0, column=0, columnspan=2, sticky='nesw')
+fr_top.grid(row=0, column=0, columnspan=2, sticky='nesw', padx=2, pady=2)
 
 # BOTTOM LEFT Frame
 fr_botle = tk.Frame(root)
@@ -204,7 +204,7 @@ fr_botle.grid(row=1, column=0, sticky="ns")
 
 # BOTTOM RIGHT Frame
 fr_botri = tk.Frame(root, bd=1, relief=tk.SOLID, bg="white")
-fr_botri.grid(row=1, column=1, sticky="nesw")
+fr_botri.grid(row=1, column=1, sticky="nesw", padx=2, pady=2)
 
 # ROOT WEIGHTS
 root.grid_columnconfigure(0, weight=0)
@@ -216,7 +216,7 @@ root.grid_rowconfigure(1, weight=1)
 ##
 ## TOP Stuff
 # path to deck folder
-tk.Label(fr_top, text="Deck folder:").grid(row=0, column=0, padx=1)
+tk.Label(fr_top, text="Deck folder:").grid(row=0, column=0, padx=2)
 
 deckdir = tk.StringVar(root)
 deckdir.set(os.path.abspath('./'))
@@ -240,15 +240,15 @@ fr_top.grid_columnconfigure(1, weight=1)
 ##
 ## BOTTOM LEFT Stuff
 # Image size slider
-tk.Label(fr_botle, text="Size:").grid(row=0, column=0, stick="sw", pady=1)
+tk.Label(fr_botle, text="Size:").grid(row=0, column=0, stick="sw", pady=2)
 imgscale = tk.Scale(fr_botle, from_=15, to=80, orient=tk.HORIZONTAL, showvalue=0, command=lambda x : redrawcards(
         float(x)/100, imagelist_o, imagelist, imagetklist, imagelabellist))
 imgscale.set(36)
-imgscale.grid(row=0, column=1, stick="ew", padx=2, pady=1)
+imgscale.grid(row=0, column=1, stick="ew", padx=0, pady=1)
 
 # Text box
 decktext = tk.Text(fr_botle, bd=1, width=34, relief=tk.SOLID)
-decktext.grid(row=1, column=0, columnspan=2, stick="nesw")
+decktext.grid(row=1, column=0, columnspan=2, stick="nesw", padx=2, pady=1)
 decktext.bind('<'+ctrlkey+'-a>', select_all)
 decktext.bind('<'+ctrlkey+'-A>', select_all)
 decktext.bind('<'+ctrlkey+'-c>', copy_text)
@@ -261,14 +261,14 @@ decktext.unbind('<Button-3>')
 
 # Buttons
 fr_botle_but = tk.Frame(fr_botle)
-fr_botle_but.grid(row=2, column=0, columnspan=2, sticky="we", padx=2)
+fr_botle_but.grid(row=2, column=0, columnspan=2, sticky="we", padx=3, pady=3)
 
 quitbutton = tk.Button(fr_botle_but, width=10, text='Quit', command=root.quit)
-quitbutton.pack(side=tk.LEFT)
+quitbutton.pack(side=tk.LEFT, padx=1, pady=1)
 
 startbutton = tk.Button(fr_botle_but, width=10, text='Start', command=lambda : nextcard(
     wr_botri, decktext, cardjson, imgscale, imagelist_o, imagelist, imagetklist, imagelabellist))
-startbutton.pack(side=tk.RIGHT)
+startbutton.pack(side=tk.RIGHT, padx=1, pady=1)
 
 # WEIGHTS
 fr_botle.grid_rowconfigure(1, weight=1)
