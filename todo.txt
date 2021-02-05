@@ -1,0 +1,7 @@
+- minsize for window
+- tooltip for pics
+- add multiple selections
+- preload previews
+- loading bar for previews + make dl asynchronous
+- color code for selected (green), pending (yellow), error (rd)
+- if nothing found, ask for non-strict name search
