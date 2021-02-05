@@ -46,16 +46,19 @@ def nextcard(frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetk
 
     df = 'card_faces' in cardjson[-1]['data'][0].keys()
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        tmppics(cardjson[-1], tmpdirname)
-        drawcards(frame, tmpdirname, cardjson[-1]['total_cards'], df, scale,
-                  imagelist_o, imagelist, imagetklist, imagelabellist)
+    # if only one card, download immediately
+    if cardjson[-1]['total_cards'] == 1:
+        dlselectcard(0, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist)
+    else:
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmppics(cardjson[-1], tmpdirname)
+            drawcards(frame, tmpdirname, cardjson[-1]['total_cards'], df, scale,
+                      imagelist_o, imagelist, imagetklist, imagelabellist)
 
-
-    for i in range(0, len(imagelabellist)):
-        imagelabellist[i].bind("<ButtonRelease-1>", lambda e : selectcard(
-            e, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist))
-    return
+        for i in range(0, len(imagelabellist)):
+            imagelabellist[i].bind("<ButtonRelease-1>", lambda e : selectcard(
+                e, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist))
+        return
 
 def drawcards(frame, dir, cardnum, df, scale, imagelist_o, imagelist, imagetklist, imagelabellist):
     num = 2 * cardnum if df else cardnum
@@ -110,6 +113,9 @@ def deletecards(imagelist_o, imagelist, imagetklist, imagelabellist):
 
 def selectcard(event, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
     id = int(event.widget['text'])
+    return dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist)
+
+def dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
     datacard = cardjson[-1]['data'][id]
     df = 'card_faces' in datacard.keys()
     global deckdir
@@ -122,19 +128,19 @@ def selectcard(event, frame, textfield, cardjson, scalew, imagelist_o, imagelist
     # prepare card name for storage
     cardname = datacard['name'].replace(' ', '_').replace('//', '-')
 
-    # laod picture
+    urlpatharr = []
+    # set up work array
     if df:
-        urlf = datacard['card_faces'][0]['image_uris']['png']
-        urlb = datacard['card_faces'][1]['image_uris']['png']
         pathsepf = pathsep + cardname + '.png'
         pathsepb = pathsep + cardname + '_back.png'
-        loadpic(urlf, pathsepf)
-        loadpic(urlb, pathsepb)
+        urlpatharr.append([datacard['card_faces'][0]['image_uris']['png'], pathsepf])
+        urlpatharr.append([datacard['card_faces'][1]['image_uris']['png'], pathsepb])
     else:
-        # select correct url
-        url = datacard['image_uris']['png']
         pathsep += cardname + '.png'
-        loadpic(url, pathsep)
+        urlpatharr.append([datacard['image_uris']['png'], pathsep])
+
+    downloader = picLoadThread(0, urlpatharr, loadpicarr)
+    downloader.start()
 
     # comment out entry in textbox
     txt = readtxt(textfield)
