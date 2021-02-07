@@ -6,6 +6,8 @@ import pyperclip
 import tempfile
 import os, platform
 
+__version__ = "1.000"
+
 ctrlkey = 'Command' if platform.system() == 'Darwin' else 'Control'
 
 # Some global variables
