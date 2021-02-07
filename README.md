@@ -9,4 +9,6 @@ Double-faced cards will be shown as front and back sides side-by-side. If one of
 
 If the request yields only one card, the card is automatically downloaded. This is especially usefull when providing a specific set and/or collector number.
 
+If the requested card can not be found, it will automatically try again with a non-strict search. This means, that when searching for *Command*, it will give all cards with *Command* in the name, since there is no card exactly called *Command*.
+
 **Basic** lands will take a longer time to preview due to the large number of pictures.
