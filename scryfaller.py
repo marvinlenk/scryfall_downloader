@@ -15,6 +15,10 @@ class picLoadThread(threading.Thread):
     def run(self):
         self.func(self.workarr)
 
+def isdf(apireq):
+    """Checks if card is double faced by searching for 'dfc' in the layout."""
+    return 'dfc' in apireq['data'][0]['layout']
+
 def searchapi(card_name, unique='prints', game='paper', order='released'):
     """Generate request url from card name (with additional infos)"""
     # First, look for additional infos in front
@@ -109,7 +113,7 @@ def tmppics(apireq, dir, tp='normal'):
     """Downloads card previews of the json 'apireq' to a folder 'dir' in multiple threads.
     Picture types 'tp' can be 'small', 'normal', 'large', 'png', 'art_crop' and 'border_crop'"""
     data = apireq['data']
-    df = 'card_faces' in data[0].keys()
+    df = isdf(apireq)
     if dir[-1] == os.sep:
         pathsep = dir
     else:

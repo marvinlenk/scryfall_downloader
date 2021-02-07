@@ -130,7 +130,7 @@ def nextcard(frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetk
         cardjson.pop()
     cardjson.append(cardreq(cardname[1]))
 
-    df = 'card_faces' in cardjson[-1]['data'][0].keys()
+    df = isdf(cardjson[-1])
 
     # if only one card, download immediately
     if cardjson[-1]['total_cards'] == 1:
@@ -155,7 +155,7 @@ def dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist,
     """Downloads the selected card using a fire and forget thread and comments out the corresponding
     entry in the text box."""
     datacard = cardjson[-1]['data'][id]
-    df = 'card_faces' in datacard.keys()
+    df = isdf(cardjson[-1])
     global deckdir
     dir = deckdir.get()
     # pepare path to target folder

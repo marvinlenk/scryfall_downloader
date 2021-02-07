@@ -5,3 +5,4 @@
 - loading bar for previews + make dl asynchronous
 - color code for selected (green), pending (yellow), error (rd)
 - if nothing found, ask for non-strict name search
+- If text is selected, ctrl+v should replace
