@@ -37,8 +37,11 @@ def paste_text(event):
     """Pastes text from the system clipboard to the selected text field."""
     widget = event.widget
     if widget.index(tk.INSERT):
-        pos = widget.index(tk.INSERT)
-        widget.insert(pos, pyperclip.paste())
+        try:
+            widget.delete("sel.first", "sel.last")
+        except:
+            pass
+        widget.insert(tk.INSERT, pyperclip.paste())
 
     return 'break'
 
@@ -193,7 +196,7 @@ def dlselectcard(id, frame, textfield, cardjson, scalew, imagelist_o, imagelist,
 root = tk.Tk()
 root.title("Scryfall Image Grabber")
 root.geometry("1024x700")
-
+root.minsize("512", "300")
 # TOP Frame
 fr_top = tk.Frame(root)
 fr_top.grid(row=0, column=0, columnspan=2, sticky='nesw', padx=2, pady=2)
@@ -225,10 +228,10 @@ deckdir_entry = tk.Entry(fr_top, textvariable=deckdir)
 deckdir_entry.grid(row=0, column=1, sticky="ew", padx=1)
 deckdir_entry.bind('<'+ctrlkey+'-a>', lambda e : e.widget.select_range(0,tk.END))
 deckdir_entry.bind('<'+ctrlkey+'-A>', lambda e : e.widget.select_range(0,tk.END))
-deckdir_entry.bind('<'+ctrlkey+'-c>', lambda e : pyperclip.copy(deckdir.get()))
-deckdir_entry.bind('<'+ctrlkey+'-C>', lambda e : pyperclip.copy(deckdir.get()))
-deckdir_entry.bind('<'+ctrlkey+'-v>', lambda e : deckdir.set(pyperclip.paste()))
-deckdir_entry.bind('<'+ctrlkey+'-V>', lambda e : deckdir.set(pyperclip.paste()))
+deckdir_entry.bind('<'+ctrlkey+'-c>', lambda e : copy_text)
+deckdir_entry.bind('<'+ctrlkey+'-C>', lambda e : copy_text)
+deckdir_entry.bind('<'+ctrlkey+'-v>', lambda e : paste_text)
+deckdir_entry.bind('<'+ctrlkey+'-V>', lambda e : paste_text)
 deckdir_entry.unbind('<Button-3>')
 
 openbutton = tk.Button(fr_top, text='Open', command=lambda : askdeckdir(deckdir))
