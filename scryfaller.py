@@ -19,7 +19,7 @@ def isdf(apireq):
     """Checks if card is double faced by searching for 'dfc' in the layout."""
     return 'dfc' in apireq['data'][0]['layout']
 
-def searchapi(card_name, unique='prints', game='paper', order='released'):
+def searchapi(card_name, unique='prints', game='paper', order='released', strict=True, lang='en'):
     """Generate request url from card name (with additional infos)"""
     # First, look for additional infos in front
     cname, set, cnum = stripinfos(card_name)
@@ -49,9 +49,18 @@ def searchapi(card_name, unique='prints', game='paper', order='released'):
     if order != False:
         order_str = '&order=' + order
 
-    out = 'https://api.scryfall.com/cards/search?q=!"'
-    out += urllib.parse.quote(str(cname)) + '"'
-    out += game_str + set_str + cnum_str + order_str + unique_str
+    # Strict name
+    card_str = urllib.parse.quote(str(cname))
+    if strict:
+        card_str = '!"' + card_str + '"'
+
+    # Language flag
+    lang_str = ''
+    if lang != False:
+        lang_str = '+lang=' + lang
+
+    out = 'https://api.scryfall.com/cards/search?q=' + card_str
+    out += game_str + set_str + cnum_str + lang_str + order_str + unique_str
     return out
 
 def getjson(url):
@@ -64,14 +73,17 @@ def getjson(url):
         print(r.json()['warnings'])
     return r.json()
 
-def cardreq(card_name, unique='prints', game='paper', order='released'):
+def cardreq(card_name, unique='prints', game='paper', order='released', strict=True, lang='en'):
     """Generates json (in dict form) from requested card name (with additional infos)"""
 
     # key 'total_cards' is the length of the data array of individual cards
     # key 'data' holds an array with length 'total_cards' of cards
     # every entry of the list ist another dictionary
     # Pic urls are listed in 'image_uris'
-    r = getjson(searchapi(card_name, unique, game, order))
+    r = getjson(searchapi(card_name, unique, game, order, strict, lang))
+
+    if r is None:
+        return None
 
     # If more than one page, append data until everything is fetched
     while r['has_more']:

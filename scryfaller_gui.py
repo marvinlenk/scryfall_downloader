@@ -131,7 +131,13 @@ def nextcard(frame, textfield, cardjson, scalew, imagelist_o, imagelist, imagetk
 
     if len(cardjson) > 0:
         cardjson.pop()
-    cardjson.append(cardreq(cardname[1]))
+
+    req = cardreq(cardname[1])
+    if req is None:
+        print("Card name not found, will retry with non-strict search")
+        req = cardreq(cardname[1], strict=False)
+
+    cardjson.append(req)
 
     df = isdf(cardjson[-1])
 
