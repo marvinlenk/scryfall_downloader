@@ -80,11 +80,12 @@ def searchapi(card_name, scryconf, strict=None):
     # Promo cards - None allows for promos, True forces promos, False disallows
     promo_str = scryconf.get_searchflag('promo')
     if promo_str != '':
-        promo_str = '+' if bool(promo) else '+-'
-        promo_str += 'is:promo'
+        promo_str = '+' if promo_str == 'True' else '+-'
+        promo_str += 'is=promo'
 
     out = 'https://api.scryfall.com/cards/search?q=' + card_str
     out += game_str + set_str + cnum_str + lang_str + promo_str + order_str + unique_str
+    print(out)
     return out
 
 def getjson(url):

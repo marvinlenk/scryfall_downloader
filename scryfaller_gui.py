@@ -23,7 +23,7 @@ import pyperclip
 import tempfile
 import os, platform
 
-__version__ = "1.001"
+__version__ = "1.002"
 
 ctrlkey = 'Command' if platform.system() == 'Darwin' else 'Control'
 
@@ -245,6 +245,10 @@ def on_close(window, deckdirvar, scalew, scryconf):
     scryconf.set_window('height', height)
     scryconf.set_window('xoffset', xoffset)
     scryconf.set_window('yoffset', yoffset)
+    if platform.system() == 'Windows':
+        scryconf.set_window('zoomed', root.state())
+    else:
+        scryconf.set_window('zoomed', root.attributes('-zoomed'))
     scryconf.set_window('deckdir', deckdirvar.get())
     scryconf.set_preview('scale', scalew.get())
     scryconf.save()
@@ -260,9 +264,17 @@ root.title("Scryfall Image Downloader")
 rootwidth = conf.get_window('width')
 rootheight = conf.get_window('height')
 rootxoffset = conf.get_window('xoffset')
+rootxoffset = 0 if rootxoffset < 0 else rootxoffset
 rootyoffset = conf.get_window('yoffset')
+rootyoffset = 0 if rootyoffset < 0 else rootyoffset
 root.geometry("{}x{}+{}+{}".format(rootwidth, rootheight, rootxoffset, rootyoffset))
 root.minsize("512", "300")
+
+if not (conf.get_window('zoomed') is None):
+    if platform.system() == 'Windows':
+        root.state(conf.get_window('zoomed'))
+    else:
+        root.attributes('-zoomed', conf.get_window('zoomed'))
 
 root.wm_protocol("WM_DELETE_WINDOW", on_close_lambda)
 
@@ -290,17 +302,17 @@ root.grid_rowconfigure(1, weight=1)
 ##
 menu = tk.Menu(root)
 root.config(menu=menu)
-filemenu = tk.Menu(menu)
+filemenu = tk.Menu(menu, tearoff=0)
 menu.add_cascade(label="File", menu=filemenu)
 #filemenu.add_command(label="Open")
 #filemenu.add_separator()
 filemenu.add_command(label="Exit", command=on_close_lambda)
 
-settingsmenu = tk.Menu(menu)
+settingsmenu = tk.Menu(menu, tearoff=0)
 menu.add_cascade(label="Settings", menu=settingsmenu)
 settingsmenu.add_command(label="Edit", command=lambda : settingsdialogue(conf, root.geometry()))
 
-helpmenu = tk.Menu(menu)
+helpmenu = tk.Menu(menu, tearoff=0)
 menu.add_cascade(label="Help", menu=helpmenu)
 helpmenu.add_command(label="About", command=lambda : showabout(__version__))
 
@@ -313,30 +325,34 @@ def showabout(version):
 
 def settingsdialogue(scryconf, geometry):
     rwidth, rheight, rxoffset, ryoffset = vals_from_geometry(geometry)
-    width = 530
-    height = 300
+    width = 450
+    height = 200
     xoffset = rxoffset + rwidth // 2 - width // 2
     yoffset = ryoffset + abs(rheight - height) // 2
     window = tk.Toplevel()
     window.geometry("{}x{}+{}+{}".format(width, height, xoffset, yoffset))
-    window.minsize(str(width), str(height-100))
+    window.minsize(str(450), str(200))
     window.title("Config editor")
+    sframe = tk.Frame(window)
+    sframe.grid(row=0, column=0)
+    window.grid_rowconfigure(0, weight=1)
+    window.grid_columnconfigure(0, weight=1)
 
     row = 0
     ## Prevtype
     prevtype = tk.StringVar()
     prevtype.set(scryconf.get_preview('prevtype'))
     prevtype_options = ['small', 'normal', 'large']
-    prevtype_label = tk.Label(window, text="Preview size: ")
+    prevtype_label = tk.Label(sframe, text="Preview size: ")
     prevtype_label.grid(row=row, column=0)
     prevtype_buttons = []
     columns = 0
     for i in range(0, len(prevtype_options)):
         opt = prevtype_options[i]
         prevtype_buttons.append(
-            tk.Radiobutton(window, text=opt, value=opt, variable=prevtype))
+            tk.Radiobutton(sframe, text=opt, value=opt, variable=prevtype))
         prevtype_buttons[-1].grid(row=row, column=2*i + 1, sticky="w")
-        tk.Label(window, text="").grid(row=row, column=2*i + 2)
+        tk.Label(sframe, text="").grid(row=row, column=2*i + 2)
         columns += 2
     row += 1
 
@@ -345,16 +361,16 @@ def settingsdialogue(scryconf, geometry):
     uniqueh = scryconf.get_searchflag('unique')
     unique.set(uniqueh if uniqueh != '' else 'false')
     unique_options = [['Yes', 'prints'], ['No', 'false']]
-    unique_label = tk.Label(window, text="Individual printing: ")
+    unique_label = tk.Label(sframe, text="Individual printing: ")
     unique_label.grid(row=row, column=0)
     unique_buttons = []
     for i in range(0, len(unique_options)):
         lab = unique_options[i][0]
         val = unique_options[i][1]
         unique_buttons.append(
-            tk.Radiobutton(window, text=lab, value=val, variable=unique))
+            tk.Radiobutton(sframe, text=lab, value=val, variable=unique))
         unique_buttons[-1].grid(row=row, column=2*i + 1, sticky="w")
-        tk.Label(window, text="").grid(row=row, column=2*i + 2)
+        tk.Label(sframe, text="").grid(row=row, column=2*i + 2)
         columns += 2 if 2*i + 2 > columns else 0
     row += 1
 
@@ -363,16 +379,16 @@ def settingsdialogue(scryconf, geometry):
     gameh = scryconf.get_searchflag('game')
     game.set(gameh if gameh != '' else 'any')
     game_options = [['Paper', 'paper'], ['Arena', 'arena'], ['MTGO', 'mtgo'], ['Any', 'any']]
-    game_label = tk.Label(window, text="Game: ")
+    game_label = tk.Label(sframe, text="Game: ")
     game_label.grid(row=row, column=0)
     game_buttons = []
     for i in range(0, len(game_options)):
         lab = game_options[i][0]
         val = game_options[i][1]
         game_buttons.append(
-            tk.Radiobutton(window, text=lab, value=val, variable=game))
+            tk.Radiobutton(sframe, text=lab, value=val, variable=game))
         game_buttons[-1].grid(row=row, column=2*i + 1, sticky="w")
-        tk.Label(window, text="").grid(row=row, column=2*i + 2)
+        tk.Label(sframe, text="").grid(row=row, column=2*i + 2)
         columns += 2 if 2*i + 2 > columns else 0
     row += 1
 
@@ -386,18 +402,18 @@ def settingsdialogue(scryconf, geometry):
         langvar = langh
     lang.set(langvar)
     lang_options = [['en', 'en'], ['de', 'de'], ['Any', 'any'], ['Custom:', 'selection']]
-    lang_label = tk.Label(window, text="Language: ")
+    lang_label = tk.Label(sframe, text="Language: ")
     lang_label.grid(row=row, column=0)
     lang_buttons = []
     for i in range(0, len(lang_options)-1):
         lab = lang_options[i][0]
         val = lang_options[i][1]
         lang_buttons.append(
-            tk.Radiobutton(window, text=lab, value=val, variable=lang))
+            tk.Radiobutton(sframe, text=lab, value=val, variable=lang))
         lang_buttons[-1].grid(row=row, column=2*i + 1, sticky="w")
-        tk.Label(window, text="").grid(row=row, column=2*i + 2)
+        tk.Label(sframe, text="").grid(row=row, column=2*i + 2)
         columns += 2 if 2*i + 2 > columns else 0
-    langentryframe = tk.Frame(window)
+    langentryframe = tk.Frame(sframe)
     langentryframe.grid(row=row, column=2*i + 3, stick="w")
     lang_buttons.append(
         tk.Radiobutton(langentryframe, text=lang_options[-1][0], value=lang_options[-1][1], variable=lang))
@@ -415,16 +431,16 @@ def settingsdialogue(scryconf, geometry):
     promoh = scryconf.get_searchflag('promo')
     promo.set(promoh if promoh != '' else 'any')
     promo_options = [['Yes', 'True'], ['No', 'False'], ['Any', 'any']]
-    promo_label = tk.Label(window, text="Promo prints: ")
+    promo_label = tk.Label(sframe, text="Promo prints: ")
     promo_label.grid(row=row, column=0)
     promo_buttons = []
     for i in range(0, len(promo_options)):
         lab = promo_options[i][0]
         val = promo_options[i][1]
         promo_buttons.append(
-            tk.Radiobutton(window, text=lab, value=val, variable=promo))
+            tk.Radiobutton(sframe, text=lab, value=val, variable=promo))
         promo_buttons[-1].grid(row=row, column=2*i + 1, sticky="w")
-        tk.Label(window, text="").grid(row=row, column=2*i + 2)
+        tk.Label(sframe, text="").grid(row=row, column=2*i + 2)
         columns += 2 if 2*i + 2 > columns else 0
     row += 1
 
@@ -472,7 +488,8 @@ def settingsdialogue(scryconf, geometry):
         # Close window
         window.destroy()
 
-    buttonframe = tk.Frame(window)
+    tk.Label(sframe, text="").grid(row=row, column=0)
+    buttonframe = tk.Frame(sframe)
     buttonframe.grid(row=row+1, column=0, columnspan=columns)
     button_close = tk.Button(buttonframe, text="Save", command=closedialogue, width=6)
     button_close.pack(side=tk.LEFT, padx=1, pady=1)

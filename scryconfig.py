@@ -22,8 +22,9 @@ class scryConf():
         'window': {
             'width': 1024,
             'height': 700,
-            'xoffset': -1,
-            'yoffset': -1,
+            'xoffset': 0,
+            'yoffset': 0,
+            'zoomed' : None,
             'deckdir': os.getcwd()
             },
         'preview': {
@@ -85,8 +86,8 @@ class scryConf():
 
     def basepath(self):
         """Returns path to standard config folder."""
-        base_path = os.getenv('APPDATA') if platform.system() == 'Windows' else os.path.expanduser('~/.')
-        return base_path + 'scryfall_downloader'
+        base_path = os.getenv('APPDATA') + os.sep if platform.system() == 'Windows' else os.path.expanduser('~/.')
+        return base_path + 'Scryfall_Downloader'
 
     def standardpath(self):
         """Returns path to standard config file."""
