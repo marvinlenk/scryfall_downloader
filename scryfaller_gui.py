@@ -246,9 +246,9 @@ def on_close(window, deckdirvar, scalew, scryconf):
     scryconf.set_window('xoffset', xoffset)
     scryconf.set_window('yoffset', yoffset)
     if platform.system() == 'Windows':
-        scryconf.set_window('zoomed', root.state())
+        scryconf.set_window('zoomed', window.state())
     else:
-        scryconf.set_window('zoomed', root.attributes('-zoomed'))
+        scryconf.set_window('zoomed', window.attributes('-fullscreen'))
     scryconf.set_window('deckdir', deckdirvar.get())
     scryconf.set_preview('scale', scalew.get())
     scryconf.save()
@@ -274,7 +274,7 @@ if not (conf.get_window('zoomed') is None):
     if platform.system() == 'Windows':
         root.state(conf.get_window('zoomed'))
     else:
-        root.attributes('-zoomed', conf.get_window('zoomed'))
+        root.attributes('-fullscreen', conf.get_window('zoomed'))
 
 root.wm_protocol("WM_DELETE_WINDOW", on_close_lambda)
 
