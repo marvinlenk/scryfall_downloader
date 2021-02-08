@@ -102,7 +102,7 @@ class scryConf():
                 path = confpath
             else:
                 print("No valid file: " + confpath)
-                raise
+                raise ValueError
 
         with open(path, 'r') as fp:
             self.settings = json.load(fp)

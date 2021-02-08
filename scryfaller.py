@@ -85,7 +85,6 @@ def searchapi(card_name, scryconf, strict=None):
 
     out = 'https://api.scryfall.com/cards/search?q=' + card_str
     out += game_str + set_str + cnum_str + lang_str + promo_str + order_str + unique_str
-    print(out)
     return out
 
 def getjson(url):

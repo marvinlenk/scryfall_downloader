@@ -23,7 +23,7 @@ import pyperclip
 import tempfile
 import os, platform
 
-__version__ = "1.002b"
+__version__ = "1.003"
 
 ctrlkey = 'Command' if platform.system() == 'Darwin' else 'Control'
 
@@ -492,11 +492,11 @@ def settingsdialogue(scryconf, geometry):
     buttonframe = tk.Frame(sframe)
     buttonframe.grid(row=row+1, column=0, columnspan=columns)
     button_close = tk.Button(buttonframe, text="Save", command=closedialogue, width=6)
-    button_close.pack(side=tk.LEFT, padx=1, pady=1)
+    button_close.pack(side=tk.LEFT, padx=5, pady=1)
     button_close = tk.Button(buttonframe, text="Default", command=setdefault, width=6)
-    button_close.pack(side=tk.LEFT, padx=1, pady=1)
+    button_close.pack(side=tk.LEFT, padx=5, pady=1)
     button_close = tk.Button(buttonframe, text="Discard", command=window.destroy, width=6)
-    button_close.pack(side=tk.LEFT, padx=1, pady=1)
+    button_close.pack(side=tk.LEFT, padx=5, pady=1)
 
 ##
 ## TOP Stuff
