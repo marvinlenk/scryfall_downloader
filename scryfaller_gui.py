@@ -23,7 +23,7 @@ import pyperclip
 import tempfile
 import os, platform
 
-__version__ = "1.002"
+__version__ = "1.002b"
 
 ctrlkey = 'Command' if platform.system() == 'Darwin' else 'Control'
 
@@ -325,7 +325,7 @@ def showabout(version):
 
 def settingsdialogue(scryconf, geometry):
     rwidth, rheight, rxoffset, ryoffset = vals_from_geometry(geometry)
-    width = 450
+    width = 500
     height = 200
     xoffset = rxoffset + rwidth // 2 - width // 2
     yoffset = ryoffset + abs(rheight - height) // 2
