@@ -1,3 +1,19 @@
+"""
+Copyright (C) 2021  Marvin Lenk
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import requests as req
 import urllib.parse
 import shutil
@@ -19,48 +35,56 @@ def isdf(apireq):
     """Checks if card is double faced by searching for 'dfc' in the layout."""
     return 'dfc' in apireq['data'][0]['layout']
 
-def searchapi(card_name, unique='prints', game='paper', order='released', strict=True, lang='en'):
+def searchapi(card_name, scryconf, strict=None):
     """Generate request url from card name (with additional infos)"""
     # First, look for additional infos in front
     cname, set, cnum = stripinfos(card_name)
 
-    # Paper printing flag
-    game_str = ''
-    if game != False:
-        game_str = '+game=' + game
-
-    # Set flag
+    # Set flag - from card name
     set_str = ''
     if set != '':
         set_str = '+set=' + set
 
-    # Collector number flag
+    # Collector number flag - from card name
     cnum_str = ''
     if cnum != -1:
         cnum_str = '+cn=' + str(cnum)
 
     # Uniqueness flag
-    unique_str = ''
-    if unique != False:
-        unique_str = '&unique=' + unique
+    unique_str = scryconf.get_searchflag('unique')
+    if unique_str != '':
+        unique_str = '&unique=' + unique_str
+
+    # Paper printing flag
+    game_str = scryconf.get_searchflag('game')
+    if game_str != '':
+        game_str = '+game=' + game_str
 
     # Order flag
-    order_str = ''
-    if order != False:
-        order_str = '&order=' + order
+    order_str = scryconf.get_searchflag('order')
+    if order_str != '':
+        order_str = '&order=' + order_str
 
     # Strict name
     card_str = urllib.parse.quote(str(cname))
+    if strict is None:
+        strict = scryconf.get_searchflag('strict')
     if strict:
         card_str = '!"' + card_str + '"'
 
     # Language flag
-    lang_str = ''
-    if lang != False:
-        lang_str = '+lang=' + lang
+    lang_str = scryconf.get_searchflag('lang')
+    if lang_str != '':
+        lang_str = '+lang=' + lang_str
+
+    # Promo cards - None allows for promos, True forces promos, False disallows
+    promo_str = scryconf.get_searchflag('promo')
+    if promo_str != '':
+        promo_str = '+' if bool(promo) else '+-'
+        promo_str += 'is:promo'
 
     out = 'https://api.scryfall.com/cards/search?q=' + card_str
-    out += game_str + set_str + cnum_str + lang_str + order_str + unique_str
+    out += game_str + set_str + cnum_str + lang_str + promo_str + order_str + unique_str
     return out
 
 def getjson(url):
@@ -73,14 +97,15 @@ def getjson(url):
         print(r.json()['warnings'])
     return r.json()
 
-def cardreq(card_name, unique='prints', game='paper', order='released', strict=True, lang='en'):
-    """Generates json (in dict form) from requested card name (with additional infos)"""
+def cardreq(card_name, scryconf, strict=None):
+    """Generates json (in dict form) from requested card name (with additional infos).
+     The flag 'strict' overrides the conf file entry."""
 
     # key 'total_cards' is the length of the data array of individual cards
     # key 'data' holds an array with length 'total_cards' of cards
     # every entry of the list ist another dictionary
     # Pic urls are listed in 'image_uris'
-    r = getjson(searchapi(card_name, unique, game, order, strict, lang))
+    r = getjson(searchapi(card_name, scryconf, strict))
 
     if r is None:
         return None
