@@ -32,8 +32,10 @@ class picLoadThread(threading.Thread):
         self.func(self.workarr)
 
 def isdf(apireq):
-    """Checks if card is double faced by searching for 'dfc' in the layout."""
-    return 'dfc' in apireq['data'][0]['layout']
+    """Checks if card is double faced by searching for 'dfc' in the layout.
+    Returns array of bools for each card individually"""
+    keywords = ['dfc', 'transform']
+    return [any(x in apireq['data'][i]['layout'] for x in keywords) for i in range(0, apireq['total_cards'])]
 
 def searchapi(card_name, scryconf, strict=None):
     """Generate request url from card name (with additional infos)"""
@@ -168,13 +170,14 @@ def tmppics(apireq, dir, tp='normal'):
 
     urlpatharr = []
 
-    if df:
-        for i in range(0, apireq['total_cards']):
-            urlpatharr.append([data[i]['card_faces'][0]['image_uris'][tp], pathsep + str(i) + ending])
-            urlpatharr.append([data[i]['card_faces'][1]['image_uris'][tp], pathsep + str(i) + 'b' + ending])
-    else:
-        for i in range(0, apireq['total_cards']):
-            urlpatharr.append([data[i]['image_uris'][tp], pathsep + str(i) + ending])
+    for i in range(0, apireq['total_cards']):
+        data_i = data[i]
+        if df[i]:
+            urlpatharr.append([data_i['card_faces'][0]['image_uris'][tp], pathsep + str(i) + ending])
+            urlpatharr.append([data_i['card_faces'][1]['image_uris'][tp], pathsep + str(i) + 'b' + ending])
+        else:
+            urlpatharr.append([data_i['image_uris'][tp], pathsep + str(i) + ending])
+
 
     threadarr = []
     sllen = len(urlpatharr) // nthreads

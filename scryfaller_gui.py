@@ -23,7 +23,7 @@ import pyperclip
 import tempfile
 import os, platform
 
-__version__ = "1.003"
+__version__ = "1.004"
 
 ctrlkey = 'Command' if platform.system() == 'Darwin' else 'Control'
 
@@ -90,30 +90,31 @@ def writetxt(textfield, txt):
 
 def drawcards(frame, dir, cardnum, df, scale, imagelist_o, imagelist, imagetklist, imagelabellist):
     """Draws card previews with a given scale and stores everything in the appropriate lists."""
-    num = 2 * cardnum if df else cardnum
-    for i in range(0, num):
+    i = 0
+    for cid in range(0, cardnum):
         if dir[-1] == os.sep:
             abspath = dir
         else:
             abspath = dir + os.sep
 
         # for double faced, also load backside
-        id = i // 2 if df else i
-        name = str(id)
-        if df and i % 2 == 1:
-            name += 'b'
+        name = str(cid)
+        for j in range(0, 1+df[cid]):
+            if j == 1:
+                name += 'b'
 
-        imagelist_o.append(Image.open(abspath + name + '.jpg'))
-        imgw, imgh = imagelist_o[i].size
-        imgw = int(imgw * scale)
-        imgh = int(imgh * scale)
+            imagelist_o.append(Image.open(abspath + name + '.jpg'))
+            imgw, imgh = imagelist_o[i].size
+            imgw = int(imgw * scale)
+            imgh = int(imgh * scale)
 
-        imagelist.append(imagelist_o[i].resize((imgw, imgh), Image.ANTIALIAS))
+            imagelist.append(imagelist_o[i].resize((imgw, imgh), Image.ANTIALIAS))
 
-        imagetklist.append(ImageTk.PhotoImage(imagelist[i]))
+            imagetklist.append(ImageTk.PhotoImage(imagelist[i]))
 
-        imagelabellist.append(tk.Label(frame, text=str(id), image=imagetklist[i]))
-        frame.window_create(tk.END, window=imagelabellist[i])
+            imagelabellist.append(tk.Label(frame, text=str(cid), image=imagetklist[i]))
+            frame.window_create(tk.END, window=imagelabellist[i])
+            i += 1
 
     return True
 
@@ -180,15 +181,15 @@ def nextcard(frame, textfield, cardjson, scryconf, scalew, imagelist_o, imagelis
 
 def selectcard(event, frame, textfield, cardjson, scryconf, scalew,
                imagelist_o, imagelist, imagetklist, imagelabellist):
-    """Triggered when selecting a card image. Passes 'id' to the download function."""
-    id = int(event.widget['text'])
-    return dlselectcard(id, frame, textfield, cardjson, scryconf, scalew,
+    """Triggered when selecting a card image. Passes 'cid' to the download function."""
+    cid = int(event.widget['text'])
+    return dlselectcard(cid, frame, textfield, cardjson, scryconf, scalew,
                         imagelist_o, imagelist, imagetklist, imagelabellist)
 
-def dlselectcard(id, frame, textfield, cardjson, scryconf, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
+def dlselectcard(cid, frame, textfield, cardjson, scryconf, scalew, imagelist_o, imagelist, imagetklist, imagelabellist):
     """Downloads the selected card using a fire and forget thread and comments out the corresponding
     entry in the text box."""
-    datacard = cardjson[-1]['data'][id]
+    datacard = cardjson[-1]['data'][cid]
     df = isdf(cardjson[-1])
     global deckdir
     dir = deckdir.get()
@@ -202,7 +203,7 @@ def dlselectcard(id, frame, textfield, cardjson, scryconf, scalew, imagelist_o, 
 
     urlpatharr = []
     # set up work array
-    if df:
+    if df[cid]:
         pathsepf = pathsep + cardname + '.png'
         pathsepb = pathsep + cardname + '_back.png'
         urlpatharr.append([datacard['card_faces'][0]['image_uris']['png'], pathsepf])
